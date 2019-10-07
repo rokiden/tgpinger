@@ -14,6 +14,7 @@ def create_template(path):
     conf['token'] = 'tg_api_token'
     conf['chat'] = 'chat_id'
     conf['proxy'] = None
+    conf['timeout'] = 3
     conf['msg_title'] = 'TgMail'
     conf['mail_body_len'] = 2000
     conf.save()
@@ -54,16 +55,17 @@ def mail_repr(msg, body_len=2000):
         escape_head(msg['From']), escape_head(msg['Subject']), escape_body(msg['Body']))
 
 
-def work(path, debug=False):
+def work(path, debug=False, only_queue=False):
     conf = Config(path)
     if debug:
         print(conf.tree())
         n = Notify()
     else:
-        n = NotifyTgBot(conf['token'], conf['chat'], conf['proxy'])
+        n = NotifyTgBot(conf['token'], conf['chat'], conf['proxy'], conf['timeout'])
 
     queue = conf['queue'] if 'queue' in conf else []
-    queue.append(parse_stdin())
+    if not only_queue:
+        queue.append(parse_stdin())
 
     while queue:
         if n.send(conf['msg_title'], mail_repr(queue[0], conf['mail_body_len'])):
@@ -72,7 +74,6 @@ def work(path, debug=False):
             break
 
     conf['queue'] = queue
-
     conf.save()
 
 
@@ -81,12 +82,13 @@ if __name__ == '__main__':
     argparser.add_argument("--template", help="create config template and exit")
     argparser.add_argument("--config", help="config file")
     argparser.add_argument("--debug", help="local debug mode", action="store_true")
+    argparser.add_argument("--queue", help="don't parse stdin, only queue", action="store_true")
     args = argparser.parse_args()
 
     if args.template is not None:
         create_template(args.template)
         print("Template config created:", args.template)
     elif args.config is not None:
-        work(args.config, args.debug)
+        work(args.config, args.debug, args.queue)
     else:
         raise Exception("Config file not specified")
