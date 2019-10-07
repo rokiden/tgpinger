@@ -1,15 +1,23 @@
 import json
 import os
+from filelock import FileLock
 
 
 class Config:
-    def __init__(self, json_name):
+    def __init__(self, json_name, lock=True, lock_timeout=-1):
+        if lock:
+            self.lock = FileLock(json_name + ".lock", timeout=lock_timeout)
+            self.lock.acquire()
         self.json_name = json_name
         if os.path.isfile(json_name):
             self.obj = json.load(open(self.json_name, 'rt'))
         else:
             self.obj = dict()
             self.save()
+
+    def __del__(self):
+        if self.lock:
+            self.lock.release()
 
     def __contains__(self, item):
         return item in self.obj

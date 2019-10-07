@@ -9,7 +9,7 @@ class Notify:
 
 
 class NotifyTgBot(Notify):
-    def __init__(self, token, chat_id, proxy=None):
+    def __init__(self, token, chat_id, proxy=None, timeout=3, max_len=-1):
         """
         :param token: Telegram bot api token
         :param proxy: proxy creds for http and https
@@ -19,15 +19,21 @@ class NotifyTgBot(Notify):
         """
         super().__init__()
         self.chat_id = chat_id
+        self.timeout = timeout
+        self.max_len = max_len
 
         import telebot
         if proxy is not None:
             telebot.apihelper.proxy = {'http': proxy, 'https': proxy}
+        # import logging
+        # telebot.logger.setLevel(logging.DEBUG)
         self.bot = telebot.TeleBot(token, threaded=False)
 
     def send(self, title, msg):
         try:
-            msg = "*%s*\n%s" % (title, msg)
+            if self.max_len > 0 and len(msg) > self.max_len:
+                msg = msg[:self.max_len] + "\n..."
+            msg = "*[ %s ]*\n%s" % (title, msg)
             resp = self.bot.send_message(self.chat_id, msg, parse_mode='Markdown')
             # print(resp)
             return True

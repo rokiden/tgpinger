@@ -32,7 +32,7 @@ def create_template(path):
     conf.save()
 
 
-def check(path, debug=False):
+def work(path, debug=False):
     conf = Config(path)
     if debug:
         print(conf.tree())
@@ -74,6 +74,6 @@ if __name__ == '__main__':
         create_template(args.template)
         print("Template config created:", args.template)
     elif args.config is not None:
-        check(args.config,args.debug)
+        work(args.config, args.debug)
     else:
         raise Exception("Config file not specified")
